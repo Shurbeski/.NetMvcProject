@@ -1,0 +1,157 @@
+﻿@model Journal.Models.Post
+
+@{
+    ViewBag.Title = "Details";
+}
+
+
+<section class="page-section bg-info" id="create"></section>
+
+<div class="container mt-4" style="background-color:#4e4239">
+    <h2>Details</h2>
+    <div class="row">
+        <div class="col-12">
+            <div class="panel panel-default panel-google-plus">
+
+                <div class="panel-google-plus-tags">
+                    <ul>
+                        <li>#@Html.DisplayFor(model => model.Title)</li>
+
+                    </ul>
+                </div>
+                <div class="panel-heading">
+                    <h5><span>Shared publicly</span> - <span>#@Html.DisplayFor(model => model.date)</span> </h5>
+                </div>
+                <div class="panel-body">
+                    <p>@Html.DisplayFor(model => model.Content)</p>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="padding:15px">
+                                <h4>Comments</h4>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="commentShow">
+                        @foreach (var comment in Model.Comments)
+                        {
+                            <tr>
+                                <td style="padding:15px">
+
+                                    <h5><span>@comment</span><br /></h5>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="panel-footer">
+                    <button type="button" class="[ btn btn-default js-like" post-id="@Model.Id">Like</button>
+                    <button type="button" class="[ btn btn-default ] like-count" like-id="@Model.Id">
+                        @Html.DisplayFor(modelItem => modelItem.LikeCount)
+                    </button>
+                    @if (User.Identity.Name.Equals(Model.PublisherId))
+                    {
+                        @Html.ActionLink("Edit", "Edit", new { id = Model.Id })
+                    }
+
+                    <div class="input-placeholder">Add a comment...</div>
+                </div>
+
+                <div class="panel-google-plus-comment">
+                    <img class="img-circle" src="https://lh3.googleusercontent.com/uFp_tsTJboUY7kue5XAsGA=s46" alt="User Image" />
+                    <div class="panel-google-plus-textarea">
+                        <textarea id="commentText" rows="4"></textarea>
+                        <button post-id="@Model.Id" type="submit" class="[ btn btn-success disabled ] js-comment">Post comment</button>
+                        <button type="reset" class="[ btn btn-default ]">Cancel</button>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn btn-secondary">@Html.ActionLink("Back to Posts", "Index")</div>
+    </div>
+
+
+
+    <p>
+        @if (this.User.Identity.Name.Equals(Model.PublisherId))
+        {
+
+            <button class="btn-secondary">
+            @Html.ActionLink("Edit", "Edit", new { id = Model.Id })
+            </button>
+        }
+
+    </p>
+</div>
+
+@section Styles {
+    <link href="@Url.Content("~/Content/Post.css")" rel="stylesheet" type="text/css" />
+}
+@section scripts{
+
+    <script type="text/javascript">
+        $(function () {
+            $('.panel-google-plus > .panel-footer > .input-placeholder, .panel-google-plus > .panel-google-plus-comment > .panel-google-plus-textarea > button[type="reset"]').on('click', function (event) {
+                var $panel = $(this).closest('.panel-google-plus');
+                $comment = $panel.find('.panel-google-plus-comment');
+
+                $comment.find('.btn:first-child').addClass('disabled');
+                $comment.find('textarea').val('');
+
+                $panel.toggleClass('panel-google-plus-show-comment');
+
+                if ($panel.hasClass('panel-google-plus-show-comment')) {
+                    $comment.find('textarea').focus();
+                }
+            });
+            $('.panel-google-plus-comment > .panel-google-plus-textarea > textarea').on('keyup', function (event) {
+                var $comment = $(this).closest('.panel-google-plus-comment');
+
+                $comment.find('button[type="submit"]').addClass('disabled');
+                if ($(this).val().length >= 1) {
+                    $comment.find('button[type="submit"]').removeClass('disabled');
+                }
+            });
+        });
+        $(document).ready(function () {
+            $(".js-comment").on("click", function () {
+                var button = $(this);
+                var td = $("dd[class$='commentShow']");
+                var input = $("textarea[id$='comment']")
+                $.ajax({
+                    url: "/Posts/AjaxComment?id=" + button.attr("post-id") + "&comment=" + $('#commentText').val(),
+                    method: "GET",
+                    success: function (result) {
+                        console.log(result);
+                        $('.table tbody').append('<tr><td style="padding:15px"><h5><span>' + result + '</span></h5></td></tr>');
+                        
+                    },
+                    complete: function () {
+                        $("#commentText").val('');
+                    }
+                });
+            });
+            $(".js-like").on("click", function () {
+                var button = $(this);
+                var td = $("button[class$='like-count'][like-id$='" + button.attr("post-id") + "']");
+                $.ajax({
+                    url: "/Posts/AjaxLike/" + button.attr("post-id"),
+                    method: "GET",
+                    success: function (result) {
+                        td.html('<td class="like-count" like-id="' + button.attr("post-id") + '">' + result + '</td>');
+                    }
+                });
+
+
+
+            });
+        });
+    </script>
+    @Scripts.Render("~/bundles/jqueryval")
+}
